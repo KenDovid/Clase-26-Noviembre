@@ -1,122 +1,107 @@
-// Código corregido
+// CRUD de archivos desde consola usando Node.js
+// Amigo, este código es tu espada y tu escudo.
 
-import http from 'http';
+// Módulos
 import fs from 'fs';
 
-const port = 3000;
 const ARCHIVO = 'registro.txt';
 
-const server = http.createServer((req, res) => {
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+// --- Obtener comando y argumentos ---
+const [,, comando, ...args] = process.argv;
 
-    // ===== RUTA INICIO =====
-    if (req.url === '/' || req.url === '/inicio') {
-        return res.end(`
-            <h1>CRUD con archivos .txt usando FS</h1>
-            <p>Selecciona una acción:</p>
-            <ul>
-                <li><a href="/crear">Crear archivo</a></li>
-                <li><a href="/agregar">Agregar contenido</a></li>
-                <li><a href="/leer">Leer archivo</a></li>
-                <li><a href="/actualizar">Actualizar archivo</a></li>               
-                <li><a href="/eliminar">Eliminar archivo</a></li>
-            </ul>
-        `);
+// --- Helpers mágicos ---
+function crearArchivo() {
+    if (fs.existsSync(ARCHIVO)) {
+        console.log("⚠️  El archivo ya existía, no fue creado.");
+        return;
     }
 
-    // ===== CREATE =====
-    if (req.url === '/crear') {
+    fs.writeFileSync(ARCHIVO, "Inicio del registro de actividades\n");
+    console.log("✅ Archivo creado exitosamente");
+}
 
-        // Si NO existe, lo crea
-        if (!fs.existsSync(ARCHIVO)) {
-            fs.writeFileSync(ARCHIVO, 'Inicio del registro de actividades\n');
-        }
-
-        return res.end(`
-            <h1>Crear archivo</h1>
-            <p>Archivo creado exitosamente.</p>
-            <a href="/inicio">Volver</a>
-        `);
+function agregarContenido(texto) {
+    if (!fs.existsSync(ARCHIVO)) {
+        console.log("❌ No se puede agregar: el archivo no existe.");
+        return;
     }
 
-    // ===== APPEND =====
-    if (req.url === '/agregar') {
+    const linea = texto ? texto : `Nueva actividad: ${new Date().toISOString()}`;
 
-        const nuevaLinea = `Nueva actividad: ${new Date().toISOString()}\n`;
+    fs.appendFileSync(ARCHIVO, linea + "\n");
+    console.log("➕ Contenido agregado:");
+    console.log(linea);
+}
 
-        fs.appendFileSync(ARCHIVO, nuevaLinea);
-
-        return res.end(`
-            <h1>Agregar contenido</h1>
-            <p>Se agregó esta línea:</p>
-            <pre>${nuevaLinea}</pre>
-            <a href="/inicio">Volver</a>
-        `);
+function leerArchivo() {
+    if (!fs.existsSync(ARCHIVO)) {
+        console.log("❌ El archivo no existe.");
+        return;
     }
 
-    // ===== READ =====
-    if (req.url === '/leer') {
+    const contenido = fs.readFileSync(ARCHIVO, 'utf8');
+    console.log("📄 Contenido del archivo:\n");
+    console.log(contenido);
+}
 
-        if (!fs.existsSync(ARCHIVO)) {
-            return res.end(`
-                <h1>Error</h1>
-                <p>El archivo no existe.</p>
-                <a href="/inicio">Volver</a>
-            `);
-        }
-
-        const contenido = fs.readFileSync(ARCHIVO, 'utf8');
-
-        return res.end(`
-            <h1>Leer archivo</h1>
-            <pre>${contenido}</pre>
-            <a href="/inicio">Volver</a>
-        `);
+function actualizarArchivo(nuevoTexto) {
+    if (!fs.existsSync(ARCHIVO)) {
+        console.log("❌ No se puede actualizar: el archivo no existe.");
+        return;
     }
 
-    // ===== UPDATE =====
-    if (req.url === '/actualizar') {
+    const texto = nuevoTexto ? 
+        nuevoTexto :
+        `REGISTRO ACTUALIZADO\nÚltima modificación: ${new Date().toISOString()}`;
 
-        const nuevoContenido = `REGISTRO ACTUALIZADO\nÚltima modificación: ${new Date().toISOString()}\n`;
+    fs.writeFileSync(ARCHIVO, texto + "\n");
 
-        fs.writeFileSync(ARCHIVO, nuevoContenido);
+    console.log("🔄 Archivo actualizado con:");
+    console.log(texto);
+}
 
-        return res.end(`
-            <h1>Actualizar archivo</h1>
-            <p>Archivo reemplazado completamente por:</p>
-            <pre>${nuevoContenido}</pre>
-            <a href="/inicio">Volver</a>
-        `);
+function eliminarArchivo() {
+    if (!fs.existsSync(ARCHIVO)) {
+        console.log("❌ El archivo no existe.");
+        return;
     }
 
-    // ===== DELETE =====
-    if (req.url === '/eliminar') {
+    fs.unlinkSync(ARCHIVO);
+    console.log("🗑️ Archivo eliminado con éxito.");
+}
 
-        if (fs.existsSync(ARCHIVO)) {
-            fs.unlinkSync(ARCHIVO);
-            return res.end(`
-                <h1>Eliminar archivo</h1>
-                <p>Archivo eliminado correctamente.</p>
-                <a href="/inicio">Volver</a>
-            `);
-        }
+// --- Controlador estilo maestro ninja ---
+switch (comando) {
+    case "crear":
+        crearArchivo();
+        break;
 
-        return res.end(`
-            <h1>Eliminar archivo</h1>
-            <p>El archivo no existe.</p>
-            <a href="/inicio">Volver</a>
-        `);
-    }
+    case "agregar":
+        agregarContenido(args.join(" "));
+        break;
 
-    // ===== RUTA NO EXISTE =====
-    res.end(`
-        <h1>Error 404</h1>
-        <p>Ruta no encontrada: ${req.url}</p>
-        <a href="/inicio">Volver</a>
-    `);
+    case "leer":
+        leerArchivo();
+        break;
 
-});
+    case "actualizar":
+        actualizarArchivo(args.join(" "));
+        break;
 
-server.listen(port, () => {
-    console.log(`Servidor arriba en http://localhost:${port}`);
-});
+    case "eliminar":
+        eliminarArchivo();
+        break;
+
+    default:
+        console.log(`
+Comandos disponibles:
+
+  node crud_consola crear
+  node crud_consola agregar "texto opcional"
+  node crud_consola leer
+  node crud_consola actualizar "nuevo contenido"
+  node crud_consola eliminar
+
+Cada comando es un pequeño hechizo del caos organizado.
+`);
+}
