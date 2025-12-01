@@ -1,107 +1,94 @@
-// CRUD de archivos desde consola usando Node.js
-// Amigo, este código es tu espada y tu escudo.
+import fs from "fs";
+import readline from "readline";
 
-// Módulos
-import fs from 'fs';
+const ARCHIVO = "registro.txt";
 
-const ARCHIVO = 'registro.txt';
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
 
-// --- Obtener comando y argumentos ---
-const [,, comando, ...args] = process.argv;
-
-// --- Helpers mágicos ---
+// --- FUNCIONES CRUD ---
 function crearArchivo() {
     if (fs.existsSync(ARCHIVO)) {
-        console.log("⚠️  El archivo ya existía, no fue creado.");
-        return;
+        console.log("⚠️  El archivo ya existe.");
+    } else {
+        fs.writeFileSync(ARCHIVO, "Inicio del registro\n");
+        console.log("✅ Archivo creado exitosamente.");
     }
-
-    fs.writeFileSync(ARCHIVO, "Inicio del registro de actividades\n");
-    console.log("✅ Archivo creado exitosamente");
+    mostrarMenu();
 }
 
-function agregarContenido(texto) {
-    if (!fs.existsSync(ARCHIVO)) {
-        console.log("❌ No se puede agregar: el archivo no existe.");
-        return;
-    }
-
-    const linea = texto ? texto : `Nueva actividad: ${new Date().toISOString()}`;
-
-    fs.appendFileSync(ARCHIVO, linea + "\n");
-    console.log("➕ Contenido agregado:");
-    console.log(linea);
+function agregarContenido() {
+    rl.question("👉 Escribe el texto a agregar: ", (texto) => {
+        fs.appendFileSync(ARCHIVO, texto + "\n");
+        console.log("➕ Texto agregado.");
+        mostrarMenu();
+    });
 }
 
 function leerArchivo() {
     if (!fs.existsSync(ARCHIVO)) {
         console.log("❌ El archivo no existe.");
-        return;
+    } else {
+        const contenido = fs.readFileSync(ARCHIVO, "utf8");
+        console.log("\n📄 CONTENIDO DEL ARCHIVO:");
+        console.log("-------------------------");
+        console.log(contenido);
+        console.log("-------------------------\n");
     }
-
-    const contenido = fs.readFileSync(ARCHIVO, 'utf8');
-    console.log("📄 Contenido del archivo:\n");
-    console.log(contenido);
+    mostrarMenu();
 }
 
-function actualizarArchivo(nuevoTexto) {
-    if (!fs.existsSync(ARCHIVO)) {
-        console.log("❌ No se puede actualizar: el archivo no existe.");
-        return;
-    }
-
-    const texto = nuevoTexto ? 
-        nuevoTexto :
-        `REGISTRO ACTUALIZADO\nÚltima modificación: ${new Date().toISOString()}`;
-
-    fs.writeFileSync(ARCHIVO, texto + "\n");
-
-    console.log("🔄 Archivo actualizado con:");
-    console.log(texto);
+function actualizarArchivo() {
+    rl.question("✍️ Nuevo contenido: ", (texto) => {
+        fs.writeFileSync(ARCHIVO, texto + "\n");
+        console.log("🔄 Archivo reemplazado completamente.");
+        mostrarMenu();
+    });
 }
 
 function eliminarArchivo() {
     if (!fs.existsSync(ARCHIVO)) {
         console.log("❌ El archivo no existe.");
-        return;
+    } else {
+        fs.unlinkSync(ARCHIVO);
+        console.log("🗑️ Archivo eliminado exitosamente.");
     }
-
-    fs.unlinkSync(ARCHIVO);
-    console.log("🗑️ Archivo eliminado con éxito.");
+    mostrarMenu();
 }
 
-// --- Controlador estilo maestro ninja ---
-switch (comando) {
-    case "crear":
-        crearArchivo();
-        break;
-
-    case "agregar":
-        agregarContenido(args.join(" "));
-        break;
-
-    case "leer":
-        leerArchivo();
-        break;
-
-    case "actualizar":
-        actualizarArchivo(args.join(" "));
-        break;
-
-    case "eliminar":
-        eliminarArchivo();
-        break;
-
-    default:
-        console.log(`
-Comandos disponibles:
-
-  node crud_consola crear
-  node crud_consola agregar "texto opcional"
-  node crud_consola leer
-  node crud_consola actualizar "nuevo contenido"
-  node crud_consola eliminar
-
-Cada comando es un pequeño hechizo del caos organizado.
+// --- MENÚ PRINCIPAL ---
+function mostrarMenu() {
+    console.log(`
+==============================
+     🧩  CRUD INTERACTIVO
+==============================
+1) Crear archivo
+2) Agregar contenido
+3) Leer archivo
+4) Actualizar archivo
+5) Eliminar archivo
+6) Salir
 `);
+
+    rl.question("Elige una opción (1-6): ", (op) => {
+        switch (op) {
+            case "1": crearArchivo(); break;
+            case "2": agregarContenido(); break;
+            case "3": leerArchivo(); break;
+            case "4": actualizarArchivo(); break;
+            case "5": eliminarArchivo(); break;
+            case "6":
+                console.log("👋 Hasta la próxima, Amigo.");
+                rl.close();
+                break;
+            default:
+                console.log("❓ Opción no válida, intenta otra vez.");
+                mostrarMenu();
+        }
+    });
 }
+
+// Iniciar programa
+mostrarMenu();
